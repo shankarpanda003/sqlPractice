@@ -30,36 +30,21 @@
 -- Each day only have one row record, and the dates are increasing with id increasing.
 
 -- Solution
-drop table if exists data_table;
-create temp table data_table as (select 1 as id, current_date as visit_date, 10 as people
-                                 union all
-                                 select 2 as id, current_date + 1, 109
-                                 union all
-                                 select 3 as id, current_date + 2, 150
-                                 union all
-                                 select 4 as id, current_date + 3, 99
-                                 union all
-                                 select 5 as id, current_date + 4, 145
-                                 union all
-                                 select 6 as id, current_date + 5, 1455
-                                 union all
-                                 select 7 as id, current_date + 6, 199
-                                 union all
-                                 select 8 as id, current_date + 7, 188
-                                 union all
-                                 select 9 as id, current_date + 8, 10
-                                 union all
-                                 select 10 as id, current_date + 9, 10
-                                 union all
-                                 select 11 as id, current_date + 10, 188
-                                 union all
-                                 select 12 as id, current_date + 11, 188
-                                 union all
-                                 select 13 as id, current_date + 12, 188
-                                 union all
-                                 select 14 as id, current_date + 13, 188
-                                 union all
-                                 select 15 as id, current_date + 14, 188);
+CREATE TABLE stadium (
+  id INT PRIMARY KEY,
+  visit_date DATE,
+  people INT
+);
+
+INSERT INTO stadium (id, visit_date, people) VALUES
+  (1, '2017-01-01', 10),
+  (2, '2017-01-02', 109),
+  (3, '2017-01-03', 150),
+  (4, '2017-01-04', 99),
+  (5, '2017-01-05', 145),
+  (6, '2017-01-06', 1455),
+  (7, '2017-01-07', 199),
+  (8, '2017-01-08', 188);
 
 
 WITH t1 AS (

@@ -9,10 +9,8 @@
 -- +---------------+---------+
 -- (user_id, visit_date) is the primary key for this table.
 -- Each row of this table indicates that user_id has visited the bank in visit_date.
-CREATE temp TABLE Visits (
-                            user_id INT,
-                            visit_date DATE
-);
+
+
 
 -- Table: Transactions
 
@@ -24,11 +22,6 @@ CREATE temp TABLE Visits (
 -- | amount           | int     |
 -- +------------------+---------+
 
-CREATE temp TABLE Transactions (
-                              user_id INT,
-                              transaction_date DATE,
-                              amount INT
-);
 -- There is no primary key for this table, it may contain duplicates.
 -- Each row of this table indicates that user_id has done a transaction of amount in transaction_date.
 -- It is guaranteed that the user has visited the bank in the transaction_date.(i.e The Visits table contains (user_id, transaction_date) in one row)
@@ -64,17 +57,6 @@ CREATE temp TABLE Transactions (
 -- | 8       | 2020-01-28 |
 -- +---------+------------+
 
-INSERT INTO Visits (user_id, visit_date) VALUES
-                                             (1, '2020-01-01'),
-                                             (2, '2020-01-02'),
-                                             (12, '2020-01-01'),
-                                             (19, '2020-01-03'),
-                                             (1, '2020-01-02'),
-                                             (2, '2020-01-03'),
-                                             (1, '2020-01-04'),
-                                             (7, '2020-01-11'),
-                                             (9, '2020-01-25'),
-                                             (8, '2020-01-28');
 -- Transactions table:
 -- +---------+------------------+--------+
 -- | user_id | transaction_date | amount |
@@ -88,15 +70,6 @@ INSERT INTO Visits (user_id, visit_date) VALUES
 -- | 8       | 2020-01-28       | 1      |
 -- | 9       | 2020-01-25       | 99     |
 -- +---------+------------------+--------+
-INSERT INTO Transactions (user_id, transaction_date, amount) VALUES
-                                                                 (1, '2020-01-02', 120),
-                                                                 (2, '2020-01-03', 22),
-                                                                 (7, '2020-01-11', 232),
-                                                                 (1, '2020-01-04', 7),
-                                                                 (9, '2020-01-25', 33),
-                                                                 (9, '2020-01-25', 66),
-                                                                 (8, '2020-01-28', 1),
-                                                                 (9, '2020-01-25', 99);
 
 
 -- Result table:
@@ -114,96 +87,51 @@ INSERT INTO Transactions (user_id, transaction_date, amount) VALUES
 -- * For transactions_count = 3, The visit (9, "2020-01-25") did three transactions so visits_count = 1.
 -- * For transactions_count >= 4, No customers visited the bank and did more than three transactions so we will stop at transactions_count = 3
 
+
+CREATE temp TABLE Visits (
+                            user_id INT,
+                            visit_date DATE
+CREATE temp TABLE Transactions (
+                              user_id INT,
+                              transaction_date DATE,
+                              amount INT
+);
+INSERT INTO Visits (user_id, visit_date) VALUES
+                                             (1, '2020-01-01'),
+                                             (2, '2020-01-02'),
+                                             (12, '2020-01-01'),
+                                             (19, '2020-01-03'),
+                                             (1, '2020-01-02'),
+                                             (2, '2020-01-03'),
+                                             (1, '2020-01-04'),
+                                             (7, '2020-01-11'),
+                                             (9, '2020-01-25'),
+                                             (8, '2020-01-28');
+
+INSERT INTO Transactions (user_id, transaction_date, amount) VALUES
+                                                                 (1, '2020-01-02', 120),
+                                                                 (2, '2020-01-03', 22),
+                                                                 (7, '2020-01-11', 232),
+                                                                 (1, '2020-01-04', 7),
+                                                                 (9, '2020-01-25', 33),
+                                                                 (9, '2020-01-25', 66),
+                                                                 (8, '2020-01-28', 1),
+                                                                 (9, '2020-01-25', 99);
+
 -- Solution
-WITH  RECURSIVE t1 AS(
-                    SELECT visit_date,
-                           COALESCE(num_visits,0) as num_visits,
-                           COALESCE(num_trans,0) as num_trans
-                    FROM ((
-                          SELECT visit_date, user_id, COUNT(*) as num_visits
-                          FROM visits
-                          GROUP BY 1, 2) AS a
-                         LEFT JOIN
-                          (
-                           SELECT transaction_date,
-                                 user_id,
-                                 count(*) as num_trans
-                            FROM transactions
-                          GROUP BY 1, 2) AS b
-                         ON a.visit_date = b.transaction_date and a.user_id = b.user_id)
-                      ),
-
-              t2(trans) AS (
-                      SELECT MAX(num_trans) as trans
-                        FROM t1
-                      UNION ALL
-                      SELECT trans-1 
-                        FROM t2
-                      WHERE trans >= 1)
-
-SELECT trans as transactions_count, 
-       COALESCE(visits_count,0) as visits_count
-  FROM t2 LEFT JOIN (
-                    SELECT num_trans as transactions_count, COALESCE(COUNT(*),0) as visits_count
-                    FROM t1 
-                    GROUP BY 1
-                    ORDER BY 1) AS a
-ON a.transactions_count = t2.trans
-ORDER BY trans
-
-
-with  abc as (
-select a.visit_date,count(case when transaction_date is null then 1 else null end) as non_trans,
-       count(case when transaction_date is not null then 1 else null end) as num_trans,
-       count(distinct a.user_id) as number_visit
-from Visits a left outer join Transactions T
-    on a.user_id=t.user_id and a.visit_date=t.transaction_date
-group by 1)
-select 0 as category,sum(number_visit-num_trans) as no_of_visit  from abc
-where non_trans > 0
+with recursive txn_values(txn_id) as (
+select 4 as txn_id
 union all
-select num_trans,sum(number_visit-non_trans) from abc
-where num_trans>0
-group by num_trans
-
-
---final
-with recursive abc as(
-select
-    number_of_transactions,
-    count(1) as visit_count
-from
-    (
-        select
-            a.user_id,
-            a.visit_date,
-            count(transaction_date) as number_of_transactions
-        from Visits a
-                 left join Transactions b
-                           on a.user_id = b.user_id
-                               and a.visit_date = b.transaction_date
-        group by 1,2
-    )
-group by 1)
-,NumberSequence(num) AS (
-    SELECT max(number_of_transactions) AS num
-    from abc
-    UNION ALL
-    SELECT num - 1
-    FROM NumberSequence
-    WHERE num > 0
+select txn_id-1 from txn_values where txn_id >0
 )
-select a.num as number_of_transactions,nvl(b.visit_count,0) as visit_count from
-NumberSequence a left join abc b on a.num=b.number_of_transactions
-
-
-    with recursive NumberSequence(num) AS (
-    SELECT 5 AS num
-    UNION ALL
-    SELECT num - 1
-    FROM NumberSequence
-    WHERE num > 0
-)
-    select * from NumberSequence
+select a.txn_id,count(b.num_txn) as num_visit from
+txn_values a left join
+(
+select a.user_id,a.visit_date,count(b.transaction_date) as num_txn
+from Visits a left join Transactions b
+on a.user_id=b.user_id
+and a.visit_date=b.transaction_date
+group by 1,2) b on a.txn_id=b.num_txn
+group by 1
 
 
