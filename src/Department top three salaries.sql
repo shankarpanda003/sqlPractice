@@ -39,6 +39,31 @@
 -- There are only two employees in the Sales department, 
 -- Henry earns the highest salary while Sam earns the second highest salary.
 
+
+CREATE TABLE Employee (
+  id INT,
+  name VARCHAR(50),
+  salary INT,
+  departmentId INT
+);
+
+CREATE TABLE Department (
+  id INT,
+  name VARCHAR(50)
+);
+
+INSERT INTO Department (id, name) VALUES
+(1, 'IT'),
+(2, 'Sales');
+
+INSERT INTO Employee (id, name, salary, departmentId) VALUES
+(1, 'Joe', 85000, 1),
+(2, 'Henry', 80000, 2),
+(3, 'Sam', 60000, 2),
+(4, 'Max', 90000, 1),
+(5, 'Randy', 85000, 1),
+(6, 'Will', 70000, 1);
+
 -- Solution
 select a.department, a.employee, a.salary
 from (
@@ -46,4 +71,15 @@ select d.name as department, e.name as employee, salary,
     dense_rank() over(Partition by d.name order by salary desc) as rk
 from Employee e join Department d
 on e.departmentid = d.id) a
-where a.rk<4
+where a.rk<4;
+
+
+SELECT d.name AS department, e.name AS employee, e.salary
+FROM Employee e
+JOIN Department d ON e.departmentId = d.id
+WHERE (
+  SELECT COUNT(DISTINCT e2.salary)
+  FROM Employee e2
+  WHERE e2.departmentId = e.departmentId AND e2.salary > e.salary
+) < 3
+ORDER BY d.name, e.salary DESC;
