@@ -65,21 +65,23 @@ INSERT INTO Employee (id, name, salary, departmentId) VALUES
 (6, 'Will', 70000, 1);
 
 -- Solution
-select a.department, a.employee, a.salary
-from (
-select d.name as department, e.name as employee, salary, 
-    dense_rank() over(Partition by d.name order by salary desc) as rk
-from Employee e join Department d
-on e.departmentid = d.id) a
-where a.rk<4;
+--department wise salary
 
+select * from  (
+select b.name as department
+,a.name as employee, a.salary,
+dense_rank() over(partition by b.name order by a.salary desc) as rank
+from
+Employee a inner join Department b
+on a.departmentId=b.id) where rank<=3
+order by 1,2,3;
 
-SELECT d.name AS department, e.name AS employee, e.salary
-FROM Employee e
-JOIN Department d ON e.departmentId = d.id
-WHERE (
-  SELECT COUNT(DISTINCT e2.salary)
-  FROM Employee e2
-  WHERE e2.departmentId = e.departmentId AND e2.salary > e.salary
-) < 3
-ORDER BY d.name, e.salary DESC;
+select b.name as department
+,a.name as employee, a.salary from
+Employee a
+inner join Department b
+on a.departmentId=b.id
+where (select count(distinct c.salary) from employee c
+where a.departmentId=c.departmentId
+and c.salary>a.salary) <=3
+order by 1,2,3

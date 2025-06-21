@@ -11,14 +11,18 @@
 -- +--------------+---------+
 -- (player_id, event_date) is the primary key of this table.
 -- This table shows the activity of players of some game.
--- Each row is a record of a player who logged in and played a number of games (possibly 0) before logging out on some day using some device.
+-- Each row is a record of a player who logged in and played a number
+-- of games (possibly 0) before logging out on some day using some device.
  
 
 -- We define the install date of a player to be the first login day of that player.
 
--- We also define day 1 retention of some date X to be the number of players whose install date is X and they logged back in on the day right after X, divided by the number of players whose install date is X, rounded to 2 decimal places.
+-- We also define day 1 retention of some date X to be the number of players
+--whose install date is X and they logged back in on the day right after X,
+--divided by the number of players whose install date is X, rounded to 2 decimal places.
 
--- Write an SQL query that reports for each install date, the number of players that installed the game on that day and the day 1 retention.
+-- Write an SQL query that reports for each install date,
+-- the number of players that installed the game on that day and the day 1 retention.
 
 -- The query result format is in the following example:
 
@@ -61,26 +65,15 @@ INSERT INTO Activity (player_id, device_id, event_date, games_played) VALUES (3,
 -- Player 2 installed the game on 2017-06-25 but didn't log back in on 2017-06-26 so the day 1 retention of 2017-06-25 is 0 / 1 = 0.00
 
 -- Solution
-with t1 as(
-select *,
-row_number() over(partition by player_id order by event_date) as rnk,
-min(event_date) over(partition by player_id) as install_dt,
-lead(event_date,1) over(partition by player_id order by event_date) as nxt
-from Activity)
-
-select distinct install_dt,
-count(distinct player_id) as installs,
-round(sum(case when nxt=event_date+1 then 1 else 0 end)/count(distinct player_id),2) as Day1_retention
-from t1
-where rnk = 1
-group by 1
-order by 1
-
-
-with abc as (
-select player_id,min(event_date) as min_event_date
+--find the min install date for each player. Then join it with the Activity table to find the players who logged back in on the day after their install date.
+with install_dt as (
+select player_id, min(event_date) as install_dt
 from Activity
 group by 1)
-select a.event_date,count(case when a.event_date=b.min_event_date then a.player_id else null end)
-from Activity a inner join abc b on a.player_id=b.player_id
+select install_dt,sum(played) as played,
+sum(rerurned)::numeric(10,2)/sum(played)::numeric(10,2) as day1_retenion from (
+select a.install_dt,1 as played,
+case when b.player_id is not null then 1 else 0 end as rerurned
+from install_dt a left join Activity b on a.player_id=b.player_id
+and a.install_dt+1=b.event_date)
 group by 1

@@ -108,24 +108,17 @@ INSERT INTO Exam (exam_id, student_id, score) VALUES (40, 4, 80);
 -- So, we only return the information of Student 2.
 
 -- Solution
-with t1 as(
-select student_id
-from
-(select *,
-min(score) over(partition by exam_id) as least,
-max(score) over(partition by exam_id) as most
-from exam) a
-where least = score or most = score)
-
-
-select distinct student_id, student_name
-from exam join student
-using (student_id)
-where student_id != all(select student_id from t1)
-order by 1
-
-
-select * from Exam
+with examwise_score as (
+select exam_id,max(score) as high_score,min(score) as low_score
+from Exam
+group by 1)
+select * from (
+select c.student_name,
+sum(case when a.score > b.low_score and a.score < b.high_score then  0 else 1 end) as performance_idx
+from Exam a inner join examwise_score b on a.exam_id=b.exam_id
+inner join Student c on a.student_id=c.student_id
+group by 1
+) where performance_idx=0;
 
 --get the student_id who scored high and low and then check which student is basically not in this list
 select distinct a.student_id from Exam a inner join (

@@ -50,17 +50,58 @@
 
 -- With he same formula for the average salary comparison in February, the result is 'same' since both the department '1' and '2' have the same average salary with the company, which is 7000.
 
--- Solution
-with t1 as(
-select date_format(pay_date,'%Y-%m') as pay_month, department_id, avg(amount) over(partition by month(pay_date),department_id) as dept_avg, 
-avg(amount) over(partition by month(pay_date)) as comp_avg
-from salary s join employee e
-using (employee_id))
+drop table if exists salary;
+CREATE TABLE salary (
+id int,
+  employee_id INT,
+  department_id INT,
+  amount INT,
+  pay_month date
+);
 
-select distinct pay_month, department_id, 
-case when dept_avg>comp_avg then "higher"
-when dept_avg = comp_avg then "same"
-else "lower"
-end as comparison
-from t1
-order by 1 desc
+truncate table salary;
+INSERT INTO salary (id, employee_id, amount, pay_month) VALUES
+(1, 1, 9000, '2017-03-31'),
+(2, 2, 6000, '2017-03-31'),
+(3, 3, 10000, '2017-03-31'),
+(4, 1, 7000, '2017-02-28'),
+(5, 2, 6000, '2017-02-28'),
+(6, 3, 8000, '2017-02-28');
+
+CREATE TABLE employee_n (
+  employee_id INT,
+  department_id INT
+);
+
+INSERT INTO employee_n (employee_id, department_id) VALUES
+(1, 1),
+(2, 2),
+(3, 2);
+
+select * from salary;
+
+with abc as (
+  select
+    e.department_id,
+    s.pay_month,
+    avg(s.amount) as dept_salary
+  from employee_n e
+  join salary s on e.employee_id = s.employee_id
+  group by e.department_id, s.pay_month
+)
+select
+  a.pay_month,
+  a.department_id,
+  case
+    when a.dept_salary = b.comp_salary then 'same'
+    when a.dept_salary < b.comp_salary then 'lower'
+    else 'higher'
+  end as comparison
+from abc a
+join (
+  select pay_month, avg(amount) as comp_salary
+  from salary
+  group by pay_month
+) b on a.pay_month = b.pay_month
+order by a.pay_month, a.department_id;
+

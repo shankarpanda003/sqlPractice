@@ -44,15 +44,20 @@ where middle between (cum_sum - frequency) and cum_sum
 select * from NumberFrequency
 
 
-with RECURSIVE abc(Number,Frequency,Count) as (
-    SELECT Number, Frequency, 1 AS Count
-    FROM NumberFrequency
-    WHERE Frequency > 0
-    UNION ALL
-    SELECT ng.Number, ng.Frequency, ng.Count + 1
-    FROM abc ng
-             JOIN NumberFrequency nf ON ng.Number = nf.Number
-    WHERE ng.Count < nf.Frequency
-
+with recursive abc(number,frequency,count) as (
+select number,frequency,1 as count from NumberFrequency
+union all
+select a.number,a.frequency,a.count+1 from abc a inner join NumberFrequency b
+on a.number=b.number and a.count < b.frequency
 )
-select median(Number) from abc
+select percentile_cont(0.5) WITHIN GROUP (ORDER BY Number)::numeric(10,4)
+AS median from abc
+
+
+-- generate sequence of numbers from 1 to 10
+with recursive random_number(id) as(
+select 1 as id
+union all
+select a.id+1 from random_number a where a.id < 10
+)
+select * from random_number

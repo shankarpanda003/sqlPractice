@@ -70,23 +70,49 @@ INSERT INTO EmployeeSalary (Id, Month, Salary) VALUES (3, 4, 70);
 -- | 3  | 2     | 40     |
 
 -- Solution
-with t1 as(
-select *, max(month) over(partition by id) as recent_month
-from EmployeeSalary)
+CREATE temp TABLE EmployeeSalary (
+                                Id INT,
+                                Month INT,
+                                Salary INT
+);
 
-select id, month, sum(salary) over(partition by id order by month rows between 2 preceding and current row) as salary
-from t1
-where month<recent_month
-order by 1, 2 desc
+INSERT INTO EmployeeSalary (Id, Month, Salary) VALUES (1, 1, 20);
+INSERT INTO EmployeeSalary (Id, Month, Salary) VALUES (2, 1, 20);
+INSERT INTO EmployeeSalary (Id, Month, Salary) VALUES (1, 2, 30);
+INSERT INTO EmployeeSalary (Id, Month, Salary) VALUES (2, 2, 30);
+INSERT INTO EmployeeSalary (Id, Month, Salary) VALUES (3, 2, 40);
+INSERT INTO EmployeeSalary (Id, Month, Salary) VALUES (1, 3, 40);
+INSERT INTO EmployeeSalary (Id, Month, Salary) VALUES (3, 3, 60);
+INSERT INTO EmployeeSalary (Id, Month, Salary) VALUES (1, 4, 60);
+INSERT INTO EmployeeSalary (Id, Month, Salary) VALUES (3, 4, 70);
+
+select * from EmployeeSalary;
 
 
---shankar
+
+select a.id, a.month,
+sum(a.salary) over(partition by a.id order by month rows between 2 preceding and current row)
+from EmployeeSalary a, (
+select id,max(month) as recent_months from EmployeeSalary
+group by 1)b where a.id=b.id and a.Month < b.recent_months;
+
+select a.id, a.month,
+sum(a.salary) over(partition by a.id order by month rows between unbounded preceding and current row)
+from EmployeeSalary a, (
+select id,max(month) as recent_months from EmployeeSalary
+group by 1)b where a.id=b.id and a.Month < b.recent_months;
+
 with abc as (
-    select id, max(month) as max_month from EmployeeSalary
-                                       group by 1
-)
+select a.id, a.month, a.salary
+from EmployeeSalary a, (
+select id,max(month) as recent_months from EmployeeSalary
+group by 1)b where a.id=b.id and a.Month < b.recent_months)
+select a.id,a.month,sum(b.salary) as cumm_summ
+from abc a left join abc b on a.id=b.id and a.month >= b.month
+group by 1,2
+order by a.id asc,a.month desc;
 
-select a.id,a.month,sum(Salary) over(partition by a.id order by a.Month rows unbounded preceding ) as cumm_sum
-              from EmployeeSalary a inner join abc b on a.id =b.id and a.Month <> b.max_month
-order by a.id asc ,a.Month desc
+
+
+
 
