@@ -9,7 +9,8 @@
 -- | platform    | enum    | 
 -- | amount      | int     |
 -- +-------------+---------+
--- The table logs the spendings history of users that make purchases from an online shopping website which has a desktop and a mobile application.
+-- The table logs the spendings history of users that make purchases from an online shopping
+-- website which has a desktop and a mobile application.
 -- (user_id, spend_date, platform) is the primary key of this table.
 -- The platform column is an ENUM type of ('desktop', 'mobile').
 -- Write an SQL query to find the total number of users and the total amount spent using mobile only, desktop only and both mobile and desktop together for each date.
@@ -43,20 +44,12 @@
 -- On 2019-07-02, user 2 purchased using mobile only, user 3 purchased using desktop only and no one purchased using both platforms.
 
 -- Solution
-SELECT p.spend_date, p.platform, IFNULL(SUM(amount), 0) total_amount, COUNT(DISTINCT u.user_id) total_users
-FROM
-(
-SELECT DISTINCT(spend_date), 'desktop' platform FROM Spending
-UNION
-SELECT DISTINCT(spend_date), 'mobile' platform FROM Spending
-UNION
-SELECT DISTINCT(spend_date), 'both' platform FROM Spending
-) p LEFT JOIN
-
-(SELECT user_id, spend_date, SUM(amount) amount, (CASE WHEN COUNT(DISTINCT platform)>1 THEN "both" ELSE platform END) platform
-FROM Spending
-GROUP BY spend_date, user_id) u
-
-ON p.platform = u.platform AND p.spend_date=u.spend_date
-
-GROUP BY p.spend_date, p.platform
+with abc as (
+  select spend_date,user_id,
+  platform,amount, count(1) over(partition by user_id, spend_date order by 1) as tot_cnt
+  from Spending order by spend_date )
+  select spend_date,case when tot_cnt=2 then 'both' else platform end as platform,
+  sum(amount) as amount,
+  count(distinct user_id) as total_user
+  from abc
+  group by 1,2

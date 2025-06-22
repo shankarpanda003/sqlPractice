@@ -24,6 +24,17 @@
 -- | Jack    | Xi   | Pascal |
 -- | Jane    |      |        |
 
+CREATE TABLE student (
+  name VARCHAR(20),
+  continent VARCHAR(20)
+);
+
+INSERT INTO student (name, continent) VALUES
+  ('Jack', 'America'),
+  ('Pascal', 'Europe'),
+  ('Xi', 'Asia'),
+  ('Jane', 'America');
+
 -- Solution
 select min(case when continent = 'America' then name end) as America,
 min(case when continent = 'Asia' then name end) as Asia,
