@@ -29,9 +29,11 @@
 -- item_category is the category of the item.
  
 
--- You are the business owner and would like to obtain a sales report for category items and day of the week.
+-- You are the business owner and would like to obtain a sales report for category items
+-- and day of the week.
 
--- Write an SQL query to report how many units in each category have been ordered on each day of the week.
+-- Write an SQL query to report how many units in each category have been ordered on
+-- each day of the week.
 
 -- Return the result table ordered by category.
 
@@ -85,20 +87,22 @@
 -- There are no sales of T-Shirt.
 
 -- Solution
-with t1 as(
-select distinct item_category,
-case when dayname(order_date)='Monday' then sum(quantity) over(partition by item_category,dayname(order_date)) else 0 end as Monday,
-Case when dayname(order_date)='Tuesday' then sum(quantity) over(partition by item_category,dayname(order_date)) else 0 end as Tuesday,
-Case when dayname(order_date)='Wednesday' then sum(quantity) over(partition by item_category,dayname(order_date)) else 0 end as Wednesday,
-Case when dayname(order_date)='Thursday' then sum(quantity) over(partition by item_category,dayname(order_date)) else 0 end as Thursday,
-Case when dayname(order_date)='Friday' then sum(quantity) over(partition by item_category,dayname(order_date)) else 0 end as Friday,
-Case when dayname(order_date)='Saturday' then sum(quantity) over(partition by item_category,dayname(order_date)) else 0 end as Saturday,
-Case when dayname(order_date)='Sunday' then sum(quantity) over(partition by item_category,dayname(order_date)) else 0 end as Sunday
-from orders o
-right join items i
-using (item_id))
 
-select item_category as category, sum(Monday) as Monday, sum(Tuesday) as Tuesday, sum(Wednesday) Wednesday, sum(Thursday) Thursday,
-sum(Friday) Friday, sum(Saturday) Saturday, sum(Sunday) Sunday
-from t1
-group by item_category
+with abc as (
+  select to_char(order_date,'DAY') as day_of_week,
+  b.item_category,
+  sum(a.quantity) as num_orders
+  from Orders a
+  right join Items b
+  on a.item_id=b.item_id
+  group by 1,2)
+  select item_category,
+  sum(case when trim(day_of_week)='SUNDAY' then num_orders else 0 end) as Sunday,
+  sum(case when trim(day_of_week)='MONDAY' then num_orders else 0 end) as MONDAY,
+  sum(case when trim(day_of_week)='TUESDAY' then num_orders else 0 end) as TUESDAY,
+  sum(case when trim(day_of_week)='WEDNESDAY' then num_orders else 0 end) as WEDNESDAY,
+  sum(case when trim(day_of_week)='THURSDAY' then num_orders else 0 end) as THURSDAY,
+  sum(case when trim(day_of_week)='FRIDAY' then num_orders else 0 end) as FRIDAY,
+  sum(case when day_of_week='SATURDAY' then num_orders else 0 end) as SATURDAY
+  from abc
+  group by 1
